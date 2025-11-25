@@ -461,6 +461,8 @@
     </div>
 
     <script>
+        let lastSelectedDate = null;
+
         const nameMap = {
             "Cau": "Insp. Acauã",
             "Piazza": "Esc. Fernanda Piazza",
@@ -607,6 +609,19 @@
             "31/12/2025": ["Brozoza", "Loss", ""]
         };
 
+        function getTodayBrasilia() {
+            // Horário de Brasília (UTC-3)
+            const now = new Date();
+            const offset = -3;
+            const brasiliaTime = new Date(now.getTime() + offset * 60 * 60 * 1000);
+            
+            const day = String(brasiliaTime.getUTCDate()).padStart(2, '0');
+            const month = String(brasiliaTime.getUTCMonth() + 1).padStart(2, '0');
+            const year = brasiliaTime.getUTCFullYear();
+            
+            return day + '/' + month + '/' + year;
+        }
+
         function sortDates(dates) {
             return dates.sort((a, b) => {
                 const [diaA, mesA, anoA] = a.split('/');
@@ -628,8 +643,12 @@
             
             contents[index].classList.add('active');
             buttons[index].classList.add('active');
-            
-            document.getElementById('output').value = '';
+
+            // Restaurar a data última selecionada em todas as abas
+            if (lastSelectedDate) {
+                document.getElementById('date-select').value = lastSelectedDate;
+                document.getElementById('swap-date-select').value = lastSelectedDate;
+            }
         }
 
         function buildMessage(date, swaps = null) {
@@ -638,7 +657,6 @@
             
             let [sa01, sa02, saNac] = escala;
 
-            // Se houver trocas, aplicar
             if (swaps) {
                 if (swaps[0]) sa01 = peopleShortMap[swaps[0]];
                 if (swaps[1]) sa02 = peopleShortMap[swaps[1]];
@@ -673,6 +691,7 @@
         function searchByDate() {
             const date = document.getElementById('date-select').value;
             if (!date) return;
+            lastSelectedDate = date;
             document.getElementById('output').value = buildMessage(date);
         }
 
@@ -725,6 +744,8 @@
                 return;
             }
 
+            lastSelectedDate = date;
+
             const escala = schedule[date];
             if (!escala) return;
 
@@ -738,7 +759,6 @@
                 names[2] = "(Sem NAC neste dia)";
             }
 
-            // Carregar os nomes nos campos "Quem está"
             for (let i = 1; i <= 3; i++) {
                 const elem = document.getElementById('swap-person-' + i);
                 elem.innerHTML = '<option value="">-- ' + names[i-1] + ' --</option>';
@@ -795,7 +815,18 @@
             document.getElementById('person-select').value = '';
             document.getElementById('swap-date-select').value = '';
             document.getElementById('swap-options-container').style.display = 'none';
+            lastSelectedDate = null;
         }
+
+        // Inicializar com a data de hoje
+        window.addEventListener('DOMContentLoaded', function() {
+            const todayDate = getTodayBrasilia();
+            if (schedule[todayDate]) {
+                lastSelectedDate = todayDate;
+                document.getElementById('date-select').value = todayDate;
+                document.getElementById('output').value = buildMessage(todayDate);
+            }
+        });
     </script>
 </body>
 </html>
